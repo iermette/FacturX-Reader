@@ -23,7 +23,7 @@ Application de bureau légère pour Factur-X, UBL et CII (EN 16931) — Windows,
 [Roadmap](ROADMAP.md) ·
 [Changelog](CHANGELOG.md)
 
-<img src="docs/screenshots/controles.png" width="900" alt="Onglet Données : synthèse de la facture et contrôles de cohérence, avec un écart d'un centime sur le total TTC">
+<img src="docs/screenshots/controles.png" width="900" alt="Onglet Analyse : synthèse de la facture et contrôles de cohérence, avec un écart d'un centime sur le total TTC">
 
 </div>
 
@@ -58,7 +58,7 @@ tableaux lisibles en français, **recalcule les montants** et signale ce qui ne 
 | 📁 **Dossier surveillé** | Nouvelles factures détectées dans un dossier choisi, import avec progression, pause et annulation. |
 | 🔎 **Provenance des valeurs** | Source XML des dates, totaux, lignes et ventilations de TVA par taux, avec détail des calculs et accès depuis les anomalies. |
 | 🗄️ **Bibliothèque locale** | Toutes les factures déjà ouvertes, retrouvables entre les sessions. Signale un IBAN nouveau pour un fournisseur, un doublon dans l'historique, une variation de prix unitaire. |
-| 🪟 **PDF et données côte à côte** | Vérifiez une ligne sans changer d'onglet ; recherchez et surlignez le texte du PDF. |
+| 🪟 **Vue côte à côte paramétrable** | PDF d'origine ou PDF du XML à gauche, analyse ou pointage de ligne à droite ; vérifiez une ligne sans changer d'onglet. |
 | 🖊️ **Pointage et suivi** | Pointage des lignes, statut À vérifier / Vérifiée / Anomalie, commentaires par facture et par ligne. |
 | 🔎 **Recherche** | Texte ou regex, dans le document ou dans tous les documents ouverts, avec surlignage. |
 | 📤 **Exports** | Lignes et tableau en CSV ou Excel (.xlsx), rapport de contrôle en JSON ou PDF, copie en CSV, JSON ou Markdown par clic droit. |
@@ -68,11 +68,11 @@ tableaux lisibles en français, **recalcule les montants** et signale ce qui ne 
 <table>
 <tr>
 <td width="50%"><img src="docs/screenshots/tableau.png" alt="Tableau des factures ouvertes avec totaux par devise et état des contrôles"></td>
-<td width="50%"><img src="docs/screenshots/pdf-et-donnees.png" alt="Vue PDF et données côte à côte"></td>
+<td width="50%"><img src="docs/screenshots/pdf-et-donnees.png" alt="Vue côte à côte : PDF à gauche, lignes de facture à droite"></td>
 </tr>
 <tr>
 <td align="center"><sub>Tableau multi-factures : totaux, avoirs déduits, anomalies</sub></td>
-<td align="center"><sub>PDF et données côte à côte</sub></td>
+<td align="center"><sub>Vue côte à côte : PDF et lignes, chacun avec son défilement</sub></td>
 </tr>
 </table>
 
@@ -160,7 +160,7 @@ la molette fait défiler les onglets. Le chevron de la barre d'onglets, ou `Ctrl
 **liste des documents ouverts**, filtrable au clavier.
 
 Par défaut, les documents ouverts et le document actif sont restaurés au lancement, avec
-leur vue PDF / Données / XML, leur position de défilement et leur zoom mémorisés.
+leur vue PDF / Analyse / Pointage / XML, leur position de défilement et leur zoom mémorisés.
 Le réglage **Paramètres → Au démarrage → Afficher l'accueil** permet une reprise manuelle.
 Les fichiers passés au lancement prennent priorité sur la restauration automatique.
 
@@ -199,7 +199,7 @@ Dans le panneau **Fichiers** :
 
 ### Exports Excel et rapport PDF
 
-Dans **Données**, utilisez **Exporter Excel** pour les lignes affichées (recherche, tri et filtre de pointage appliqués), ou **Rapport PDF** dans les contrôles. Dans le **Tableau des factures**, **Exporter Excel** reprend les factures filtrées et ajoute une feuille de totaux par devise, avec les avoirs déduits. Ces actions sont aussi dans le menu **Fichier**.
+Dans **Pointage de ligne**, utilisez **Exporter Excel** pour les lignes affichées (recherche, tri et filtre de pointage appliqués), ou **Rapport PDF** dans les contrôles de l'onglet **Analyse**. Dans le **Tableau des factures**, **Exporter Excel** reprend les factures filtrées et ajoute une feuille de totaux par devise, avec les avoirs déduits. Ces actions sont aussi dans le menu **Fichier**.
 
 Les montants Excel sont numériques ; les numéros et références restent du texte. Les valeurs dépassant 15 chiffres significatifs restent textuelles pour éviter un arrondi par Excel. Le rapport PDF contient la synthèse, les verdicts et limites des contrôles, les diagnostics et le suivi manuel. Les résultats encore en cours sont ceux de l’instant de l’export : réexportez après leur achèvement. Tous les fichiers sont générés localement, sans réseau.
 
@@ -207,7 +207,7 @@ Détails du chantier, architecture et limites : [Exports Excel/PDF](docs/EXPORTS
 
 ### Centre d’anomalies
 
-Dans **Données**, le centre rassemble les écarts et alertes des différents contrôles. Filtrez par gravité et source, recherchez une règle ou une valeur, consultez l’action conseillée, puis utilisez **Voir le champ dans le XML** ou **Voir le contrôle**. **Copier la demande** prépare un texte à relire et transmettre au fournisseur. Aucun message n’est envoyé et le XML reste inchangé.
+Dans l'onglet **Analyse**, le centre rassemble les écarts et alertes des différents contrôles. Filtrez par gravité et source, recherchez une règle ou une valeur, consultez l’action conseillée, puis utilisez **Voir le champ dans le XML** ou **Voir le contrôle**. **Copier la demande** prépare un texte à relire et transmettre au fournisseur. Aucun message n’est envoyé et le XML reste inchangé.
 
 Les valeurs inconnues sont indiquées comme telles ; les contrôles incomplets restent distincts des anomalies. L’aide est incluse dans les rapports JSON et PDF. [Fonctionnement, tests et limites](docs/ANOMALIES.md).
 
@@ -225,7 +225,7 @@ Les totaux du tableau et de l'échéancier, les filtres monétaires et les compa
 
 ### Provenance des valeurs
 
-Dans **Données**, ouvrez **Voir la provenance** sur une date ou un montant clé pour retrouver son champ XML. Les montants contrôlés montrent aussi la formule et les valeurs utilisées pour le recalcul. Depuis une anomalie de total, **Voir la provenance des montants** ouvre la carte concernée. Fonction disponible à partir de la 0.8.0. [Portée et limites](docs/PROVENANCE.md).
+Dans **Pointage de ligne**, ouvrez **Voir la provenance** sur une date ou un montant clé pour retrouver son champ XML. Les montants contrôlés montrent aussi la formule et les valeurs utilisées pour le recalcul. Depuis une anomalie de total, **Voir la provenance des montants** ouvre la carte concernée. Fonction disponible à partir de la 0.8.0. [Portée et limites](docs/PROVENANCE.md).
 
 La section **Ventilation de TVA** détaille chaque taux présent dans le XML : base, taux, TVA déclarée, calcul attendu et tolérance. Un écart de TVA par taux présente ce même détail dans le centre d’anomalies. Fonction disponible à partir de la 0.8.0.
 
@@ -267,11 +267,15 @@ Le surlignage jaune porte sur la ligne de l'élément trouvé.
 
 - **PDF** — rendu du PDF (pages, ajuster, zoom, enregistrer).
 - **PDF du XML** — présent quand le XML embarque un PDF distinct du fichier déposé.
-- **PDF et données** — les deux côte à côte, chacun avec son défilement (présent quand la
-  facture a un PDF).
-- **Données** — synthèse (n°, dates, vendeur, acheteur, totaux), lignes de facture, puis détail
-  vendeur / acheteur / livraison / paiement / totaux. Chaque cellule est cliquable : valeur,
-  chemin XML, copie, saut vers la ligne correspondante dans « XML complet ».
+- **Côte à côte** — paramétrable : à gauche le PDF d'origine ou le PDF du XML, à droite
+  l'analyse ou le pointage de ligne, chacun avec son défilement (présent quand la facture
+  a un PDF).
+- **Analyse** — verdicts, centre d'anomalies, contrôles de cohérence, ventilation de TVA par
+  taux, règles EN 16931, Schematron officiel et schéma XSD.
+- **Pointage de ligne** — synthèse (n°, dates, vendeur, acheteur, totaux), lignes de facture
+  avec pointage et suivi, puis détail vendeur / acheteur / livraison / paiement / totaux.
+  Chaque cellule est cliquable : valeur, chemin XML, copie, saut vers la ligne correspondante
+  dans « XML complet ».
 - **XML complet** — toutes les valeurs du document dans l'ordre, avec filtre instantané.
 - **XML brut** — XML réindenté (préfixes d'origine conservés), recherche avec surlignage.
 
@@ -287,7 +291,7 @@ Sur le tableau des **lignes de facture** :
 
 ### Verdicts
 
-En tête de l'onglet **Données**, une **synthèse** dit d'abord ce qui demande une action : le
+En tête de l'onglet **Analyse**, une **synthèse** dit d'abord ce qui demande une action : le
 nombre de familles de contrôles à examiner, le nombre de contrôles incomplets ou en cours, et un
 bouton par point qui ouvre le bloc concerné. Suivent des verdicts indépendants, jamais fondus en
 un seul « conforme » :
@@ -317,7 +321,7 @@ version 1.3.16), pour les deux syntaxes CII et UBL : 806 règles CII et 979 règ
 open source `xee` : la facture n'est envoyée nulle part, et aucun code n'est exécuté dans la
 fenêtre.
 
-Le bloc **Schematron officiel** de l'onglet Données liste chaque règle non respectée (bloquante)
+Le bloc **Schematron officiel** de l'onglet Analyse liste chaque règle non respectée (bloquante)
 et chaque avertissement, avec l'identifiant officiel (`BR-CO-15`, `UBL-CR-528`, `CII-SR-173`…),
 le texte de la règle et son emplacement dans le XML.
 
@@ -389,7 +393,7 @@ le schéma officiel du profil que la facture annonce :
 
 Une facture annoncée BASIC qui contient un élément réservé à EXTENDED est donc signalée. Une
 facture ou un avoir **UBL** est contrôlé contre le schéma OASIS UBL 2.1 correspondant. Le
-bloc **Schéma XSD** de l'onglet Données liste chaque erreur avec sa
+bloc **Schéma XSD** de l'onglet Analyse liste chaque erreur avec sa
 ligne dans l'onglet « XML brut » : élément inconnu ou mal placé, attribut non prévu, valeur d'un
 mauvais type.
 
@@ -439,7 +443,7 @@ ZIP n'a pas de conteneur : ces contrôles n'y apparaissent pas.
 
 ### Contrôles
 
-L'onglet **Données** affiche un bloc **Contrôles**, déplié dès qu'il y a un écart ou une alerte :
+L'onglet **Analyse** affiche un bloc **Contrôles**, déplié dès qu'il y a un écart ou une alerte :
 
 - **Calculs** en décimaux exacts : quantité × prix unitaire = total de ligne, somme des lignes,
   total HT, TVA par taux, total TVA, total TTC, net à payer. Un écart d'un centime est signalé ;
@@ -459,7 +463,7 @@ réseau : l'existence du SIREN ou la propriété de l'IBAN ne sont pas vérifié
 
 ### Règles EN 16931
 
-Le bloc **Règles EN 16931** de l'onglet Données liste les règles métier de la norme évaluées
+Le bloc **Règles EN 16931** de l'onglet Analyse liste les règles métier de la norme évaluées
 sur la facture, celles qui ne sont pas respectées en premier, avec leur identifiant officiel
 (`BR-07`, `BR-CO-15`, `BR-S-08`…). Un clic ouvre l'élément concerné dans « XML complet ».
 
@@ -638,7 +642,7 @@ et mémorisé :
 
 - **Thème** — Clair (défaut), Sombre, Système (suit l'OS) ou Girl ;
 - **Densité des tableaux** — Confortable ou Compacte ;
-- **Onglet affiché en premier** — PDF ou Données ;
+- **Onglet affiché en premier** — PDF ou Analyse ;
 - **Zoom du PDF par défaut** — 75 % à 200 %, ou « Ajuster à la largeur » ;
 - **Fichier des pointages** — emplacement, avec copie du chemin ;
 - **Pointages et suivi de vérification** — état des fichiers, export, import, restauration.

@@ -142,10 +142,12 @@ test('provenance des montants et accès depuis une anomalie de calcul', async ({
   });
   await page.goto(url);
   await page.locator('#file-input').setInputFiles({ name: 'montants.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.locator('.tab[data-tab="data"]').click();
+  await page.locator('.tab[data-tab="pointage"]').click();
   await expect(page.locator('[data-provenance="tva"]')).toBeVisible();
   await expect(page.locator('[data-provenance="tva"]')).toContainText('20.00 EUR');
+  await page.locator('.tab[data-tab="data"]').click();
   await page.locator('.anomaly-card').getByRole('button', { name: 'Voir la provenance des montants' }).click();
+  await expect(page.locator('.tab[data-tab="pointage"]')).toHaveClass(/active/);
   await expect(page.locator('[data-provenance="ttc"] .provenance-details')).toHaveAttribute('open', '');
   await expect(page.locator('[data-provenance="ttc"]')).toContainText(base + 'TaxInclusiveAmount');
   await expect(page.locator('[data-provenance="ttc"]')).toContainText('Contrôle : Total HT + total TVA = 120.00');
@@ -187,6 +189,7 @@ test('provenance des lignes dans la fiche et dans l’anomalie exacte', async ({
   await expect(issue).toContainText('Total de ligne déclaré : 116.00');
   await expect(issue).toContainText('Avec frais/remises : 115.00');
   await expect(issue).toContainText('Tolérance du contrôle : ±0.01');
+  await page.locator('.tab[data-tab="pointage"]').click();
   await page.locator('#lines-table-wrap th').filter({ hasText: 'Total HT' }).click();
   await page.locator('#lines-table-wrap th').filter({ hasText: 'Total HT' }).click();
   await expect(page.locator('#lines-tbody tr[data-idx]').first()).toHaveAttribute('data-idx', '1');
@@ -499,13 +502,14 @@ test('contrôles affichés, doublon signalé et export CSV des lignes visibles',
     { name: 'two.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') },
   ]);
   await expect(page.locator('.file-item .badge.err')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   const controls = page.locator('#controls');
   await expect(controls).toHaveAttribute('open', '');
   await expect(controls.locator('summary')).toContainText('1 écart');
   await expect(controls.locator('summary')).toContainText('1 alerte');
   await expect(controls.locator('tr.ctl-ecart')).toContainText('120.01');
   await expect(controls.locator('tr.ctl-alerte')).toContainText('XML identique : one.xml');
+  await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
   await page.locator('#btn-lines-export').click();
   await expect.poll(() => page.evaluate(() => window.__saved?.filename)).toBe('two-lignes.csv');
   expect(await page.evaluate(() => window.__saved.content)).toBe(
@@ -515,6 +519,7 @@ test('contrôles affichés, doublon signalé et export CSV des lignes visibles',
   await page.locator('#lines-search').fill('toner');
   await page.locator('#btn-lines-export').click();
   await expect.poll(() => page.evaluate(() => window.__saved.content.split('\r\n').length)).toBe(3);
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await controls.locator('tr.ctl-ecart').click();
   await expect(page.locator('#tab-xml')).toHaveClass(/active/);
 });
@@ -719,15 +724,16 @@ test('suivi de vérification, rapport JSON, vue PDF et données, tableau persist
   await page.locator('#file-input').setInputFiles({ name: 'suivi.pdf', mimeType: 'application/pdf', buffer: Buffer.from('test') });
   await expect(page.locator('.pdf-page')).toHaveCount(2);
 
-  // Vue côte à côte : les deux volets sont visibles en même temps.
-  await page.getByRole('button', { name: 'PDF et données', exact: true }).click();
+  // Vue côte à côte : le PDF à gauche, l'analyse par défaut à droite.
+  await page.getByRole('button', { name: 'Côte à côte', exact: true }).click();
   await expect(page.locator('#reading-panes')).toHaveClass('dual-reading');
   await expect(page.locator('#tab-pdf')).toBeVisible();
   await expect(page.locator('#tab-data #controls')).toBeVisible();
   await expect(page.locator('.pdf-page')).toHaveCount(2);
 
-  // Suivi : statut et commentaires, enregistrés par empreinte du XML.
-  const panel = page.locator('#tab-data .review-panel');
+  // Suivi : statut et commentaires, enregistrés par empreinte du XML (volet droit « Pointage »).
+  await page.locator('#dual-right').selectOption('pointage');
+  const panel = page.locator('#tab-pointage .review-panel');
   await panel.locator('summary span').click();
   await page.getByLabel('Commentaire de la facture', { exact: true }).fill('À revoir avec le fournisseur');
   await page.getByLabel('Commentaire de la ligne', { exact: true }).fill('Quantité à confirmer');
@@ -735,6 +741,8 @@ test('suivi de vérification, rapport JSON, vue PDF et données, tableau persist
   await panel.getByRole('button', { name: 'Pointer toutes les lignes' }).click();
   await expect(page.locator('#lines-pointed-count')).toHaveText('1 ligne pointée');
 
+  // Rapport de contrôles (volet droit « Analyse »).
+  await page.locator('#dual-right').selectOption('data');
   await page.locator('#controls summary span').first().click();
   await page.locator('#btn-control-report').click();
   await expect.poll(() => page.evaluate(() => window.__report?.filename)).toBe('suivi-controles.json');
@@ -764,7 +772,7 @@ test('suivi de vérification, rapport JSON, vue PDF et données, tableau persist
   await page.locator('#batch-table tbody tr.batch-row td').first().click();
   await expect(page.locator('#reading-panes')).toHaveClass('dual-reading');
   await expect(page.getByLabel('Commentaire de la facture', { exact: true })).toHaveValue('À revoir avec le fournisseur');
-  await expect(page.locator('#tab-data').getByLabel('Vérification de suivi.pdf')).toHaveValue('Vérifiée');
+  await expect(page.locator('#tab-pointage').getByLabel('Vérification de suivi.pdf')).toHaveValue('Vérifiée');
   await page.screenshot({ path: 'test-results/dual.png' });
   expect(errors).toEqual([]);
 });
@@ -786,7 +794,7 @@ test('règles EN 16931 affichées, filtrées dans le tableau, et impression', as
   await page.reload();
   await page.locator('#file-input').setInputFiles({ name: 'regles.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
   await expect(page.locator('.file-item .badge.warn').filter({ hasText: '1 règle EN 16931' })).toBeVisible();
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   const rules = page.locator('#rules');
   await expect(rules).toHaveAttribute('open', '');
   // Verdicts séparés : des calculs cohérents n'effacent pas une règle non respectée.
@@ -809,7 +817,7 @@ test('règles EN 16931 affichées, filtrées dans le tableau, et impression', as
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('#menubar')).toBeHidden();
   await expect(page.locator('#sidebar')).toBeHidden();
-  await expect(page.locator('#tab-data .review-panel')).toBeHidden();
+  await expect(page.locator('#tab-pointage .review-panel')).toBeHidden();
   await expect(page.locator('#fv-name')).toBeVisible();
   await expect(rules).toBeVisible();
   await page.screenshot({ path: 'test-results/print.png', fullPage: true });
@@ -851,7 +859,7 @@ test('pointages et suivi : fichier illisible signalé, restauration, export, imp
   await expect.poll(() => page.evaluate(() => localStorage.getItem('fx-review:abc'))).toBeNull();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('mock-suivi')).abc)).toMatchObject({ status: 'Anomalie', comment: 'Ancien commentaire' });
   await page.locator('#file-input').setInputFiles({ name: 'protege.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
   await expect(page.getByLabel('Commentaire de la facture', { exact: true })).toHaveValue('Ancien commentaire');
 
   // Un commentaire tapé est écrit dans le fichier, sans attendre la fermeture.
@@ -921,8 +929,9 @@ test('bibliothèque : recherche, ouverture, retrait, historique des prix, régla
   await expect(page.locator('#library-view')).toBeHidden();
 
   // L'alerte tirée de l'historique apparaît dans les contrôles ; historique des prix dans le détail de ligne.
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await expect(page.locator('#controls')).toContainText('IBAN différent des factures précédentes');
+  await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
   await page.locator('.detail-btn').first().click();
   await page.locator('.price-history-btn').first().click();
   const history = page.locator('.price-history table tbody tr');
@@ -971,7 +980,7 @@ test('Schematron officiel : verdicts respecté, non respecté, partiel et non é
     await page.evaluate(r => sessionStorage.setItem('mock-schematron', JSON.stringify(r)), result);
     await page.locator('#file-input').setInputFiles({ name, mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
     await expect(page.locator('#fv-name')).toHaveText(name);
-    await page.getByRole('button', { name: 'Données', exact: true }).click();
+    await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   };
   const base = { evalue: true, version_regles: '1.3.16', regles_declenchees: 42, non_conformes: 0, avertissements: 0, non_evaluables: [], erreurs: [], duree_ms: 120 };
   const verdicts = page.locator('#verdicts');
@@ -1061,7 +1070,7 @@ test('schéma XSD : erreurs listées avec leur ligne, verdict dédié', async ({
   await page.goto(url);
   await page.locator('#file-input').setInputFiles({ name: 'structure.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
   await expect(page.locator('#fv-name')).toHaveText('structure.xml');
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await expect(page.locator('#verdicts')).toContainText('2 erreurs de schéma XSD');
   const section = page.locator('#xsd-errors');
   await expect(section).toHaveAttribute('open', '');
@@ -1085,7 +1094,7 @@ test('contrôles partagés : tableau, filtres, rapport complet et synthèse navi
   });
   await page.goto(url);
   await page.locator('#file-input').setInputFiles({ name: 'controle.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Synthèse des vérifications' })).toContainText('contrôle incomplet');
   await page.screenshot({ path: 'test-results/control-summary.png' });
   await page.locator('.action-summary').getByRole('button', { name: '1 erreur de schéma XSD' }).click();
@@ -1195,10 +1204,11 @@ test('exports Excel typés et rapport PDF paginé avec accents et commentaires',
   });
   await page.goto(url);
   await page.locator('#file-input').setInputFiles({ name: 'échéance.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await expect(page.locator('#anomaly-center .anomaly-card')).toHaveCount(50);
   await page.locator('#anomaly-center').getByRole('button', { name: 'Afficher davantage' }).click();
   await expect(page.locator('#anomaly-center .anomaly-card')).toHaveCount(65);
+  await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
   await page.locator('#btn-lines-excel').click();
   await expect.poll(() => page.evaluate(() => window.__binary?.filename)).toBe('échéance-lignes.xlsx');
   const ExcelJS = require('exceljs');
@@ -1211,6 +1221,7 @@ test('exports Excel typés et rapport PDF paginé avec accents et commentaires',
   expect(lines.getCell('D2').value).toBe('EUR');
   expect(lines.views[0].ySplit).toBe(1);
   await page.evaluate(() => { const f = getFile(state.selected); reviewCache.set(reviewKey(f), { status: 'Anomalie', comment: 'Échéance à corriger — été', lines: { 0: 'Quantité à confirmer' } }); });
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await page.locator('#btn-control-pdf').click();
   await expect.poll(() => page.evaluate(() => window.__binary?.filename)).toBe('échéance-controles.pdf');
   const pdf = Buffer.from(await page.evaluate(() => window.__binary.base64), 'base64');
@@ -1284,7 +1295,7 @@ test('centre d’anomalies : valeurs, sources, filtres, demande copiée et occur
   await page.goto(url);
   await page.evaluate(() => { clipboardWrite = async text => { window.__clip = text; }; });
   await page.locator('#file-input').setInputFiles({ name: 'anomalies.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   const center = page.locator('#anomaly-center');
   await expect(center.locator('.anomaly-card')).toHaveCount(7);
   const total = center.locator('.anomaly-card').filter({ hasText: 'Total TTC à recalculer' });
@@ -1314,7 +1325,7 @@ test('centre d’anomalies : valeurs, sources, filtres, demande copiée et occur
   await center.getByRole('button', { name: 'Voir le champ dans le XML' }).click();
   await expect(page.locator('#tab-xml')).toHaveClass(/active/);
   await expect(page.locator('#xml-table tr.flash')).toHaveAttribute('data-path', 'Invoice/InvoiceLine[2]/LineExtensionAmount');
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await expect(page.locator('#anomaly-source')).toHaveValue('schematron');
   await page.locator('#anomaly-source').selectOption('coherence');
   await page.locator('#anomaly-search').fill('IBAN');
@@ -1340,7 +1351,7 @@ test('centre d’anomalies : évaluation incomplète, actualisation et conservat
   });
   await page.goto(url);
   await page.locator('#file-input').setInputFiles({ name: 'partiel.xml', mimeType: 'text/xml', buffer: Buffer.from('<Invoice/>') });
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await page.getByRole('button', { name: 'Ouvrir le centre d’anomalies' }).click();
   const center = page.locator('#anomaly-center');
   await expect(center).toContainText('Vérification à compléter');

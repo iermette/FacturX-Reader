@@ -54,7 +54,7 @@ const MENUBAR = [
       checked: () => !state.selected && state.batch && state.files.length > 0 },
     { label: "Bibliothèque", run: () => showLibrary(), checked: () => !state.selected && state.library },
     null,
-    ...[["pdf", "PDF"], ["data", "Données"], ["dual", "PDF et données"], ["xml", "XML complet"], ["raw", "XML brut"]].map(([tab, label]) => (
+    ...[["pdf", "PDF"], ["data", "Analyse"], ["pointage", "Pointage de ligne"], ["dual", "Côte à côte"], ["xml", "XML complet"], ["raw", "XML brut"]].map(([tab, label]) => (
       { label, run: () => setTab(tab), checked: () => !!menubarDoc() && state.tab === tab,
         on: () => !!menubarDoc() && (tab !== "dual" || !!(menubarDoc().result.pdf || menubarDoc().result.xml_pdf)) })),
     null,

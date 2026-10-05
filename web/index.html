@@ -291,11 +291,29 @@
       <nav class="tabs" id="tabs">
         <button class="tab active" data-tab="pdf">PDF</button>
         <button class="tab" data-tab="xmlpdf" hidden title="PDF embarqué dans le XML de la facture">PDF du XML</button>
-        <button class="tab" data-tab="data">Données</button>
-        <button class="tab" data-tab="dual" hidden title="PDF et données côte à côte">PDF et données</button>
+        <button class="tab" data-tab="data">Analyse</button>
+        <button class="tab" data-tab="pointage" title="Lignes de facture, pointages et suivi de vérification">Pointage de ligne</button>
+        <button class="tab" data-tab="dual" hidden title="Vue paramétrable : PDF à gauche, analyse ou pointage à droite">Côte à côte</button>
         <button class="tab" data-tab="xml">XML complet</button>
         <button class="tab" data-tab="raw">XML brut</button>
       </nav>
+
+      <div class="dual-toolbar" id="dual-toolbar" hidden>
+        <label class="dual-opt">
+          <span>À gauche</span>
+          <select id="dual-left" aria-label="Volet gauche de la vue côte à côte">
+            <option value="pdf">PDF d'origine</option>
+            <option value="xmlpdf">PDF du XML</option>
+          </select>
+        </label>
+        <label class="dual-opt">
+          <span>À droite</span>
+          <select id="dual-right" aria-label="Volet droit de la vue côte à côte">
+            <option value="data">Analyse</option>
+            <option value="pointage">Pointage de ligne</option>
+          </select>
+        </label>
+      </div>
 
       <div id="reading-panes">
       <section id="tab-pdf" class="tabpane active">
@@ -324,6 +342,8 @@
       </section>
 
       <section id="tab-data" class="tabpane"></section>
+
+      <section id="tab-pointage" class="tabpane"></section>
 
       <section id="tab-xml" class="tabpane">
         <div class="pane-tools">
@@ -408,7 +428,7 @@
         <label class="setting-label" for="set-default-tab">Onglet affiché en premier</label>
         <select id="set-default-tab" data-setting="defaultTab">
           <option value="pdf">PDF</option>
-          <option value="data">Données</option>
+          <option value="data">Analyse</option>
         </select>
       </div>
       <div class="setting">

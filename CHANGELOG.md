@@ -5,6 +5,20 @@ Tant que la version est en `0.y.z`, l'application est en développement initial 
 
 ## [Non publié]
 
+### Ajouté
+
+- Barre de choix dans la vue **Côte à côte** : à gauche le PDF d'origine ou le PDF du XML, à
+  droite l'**Analyse** ou le **Pointage de ligne**. Le choix est mémorisé d'une session à l'autre.
+
+### Modifié
+
+- L'ancien onglet **Données** est scindé en deux onglets : **Analyse** (verdicts, centre
+  d'anomalies, contrôles de cohérence, ventilation de TVA par taux, règles EN 16931, Schematron
+  officiel et schéma XSD) et **Pointage de ligne** (synthèse de la facture, lignes de facture avec
+  pointage et suivi, puis détail vendeur / acheteur / livraison / paiement / totaux).
+- L'ancien onglet **PDF et données** est devenu la vue **Côte à côte** paramétrable décrite
+  ci-dessus. La mémoire de vue, le défilement et la mécanique de pointage sont inchangés.
+
 ## [0.8.1] - 2026-10-05
 
 ### Ajouté

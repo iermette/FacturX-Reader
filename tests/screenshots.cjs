@@ -193,16 +193,17 @@ async function main() {
   await shot('tableau.png');
 
   await page.locator('#batch-table tbody tr.batch-row', { hasText: 'FA-0917' }).locator('td').first().click();
-  await page.getByRole('button', { name: 'Données', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyse', exact: true }).click();
   await page.locator('#controls').waitFor();
   await shot('controles.png');
 
   await page.locator('#document-tabs').getByRole('button', { name: INVOICES[0].file, exact: true }).click();
-  await page.getByRole('button', { name: 'PDF et données', exact: true }).click();
-  await page.locator('#tab-data .lines-section').waitFor();
+  await page.getByRole('button', { name: 'Côte à côte', exact: true }).click();
+  await page.locator('#dual-right').selectOption('pointage');
+  await page.locator('#tab-pointage .lines-section').waitFor();
   await page.locator('.pdf-page canvas').first().waitFor();
   await page.locator('#pdf-zoom').selectOption('1');
-  await page.evaluate(() => document.querySelector('#tab-data .lines-section').scrollIntoView());
+  await page.evaluate(() => document.querySelector('#tab-pointage .lines-section').scrollIntoView());
   await shot('pdf-et-donnees.png');
 
   await browser.close();

@@ -817,27 +817,33 @@ function setTab(name, force) {
     t.classList.toggle("active", t.dataset.tab === name));
   const paneId = (name === "xmlpdf") ? "tab-pdf" : "tab-" + name;
   byId("reading-panes").classList.toggle("dual-reading", name === "dual");
+  const dualRightId = settings.dualRight === "pointage" ? "tab-pointage" : "tab-data";
+  const activePanes = name === "dual" ? ["tab-pdf", dualRightId] : [paneId];
   document.querySelectorAll(".tabpane").forEach((p) =>
-    p.classList.toggle("active", p.id === paneId || (name === "dual" && ["tab-pdf", "tab-data"].includes(p.id))));
+    p.classList.toggle("active", activePanes.includes(p.id)));
+  const dualToolbar = byId("dual-toolbar");
+  if (dualToolbar) dualToolbar.hidden = name !== "dual";
   hidePopover();
   const f = getFile(state.selected);
   if (!f) return;
   if (name === "dual") {
-    loadPointage(f).then(() => {
-      if (state.selected !== f.id || state.tab !== "dual") return;
-      renderData(f); f.rendered.data = true; restoreDocumentScroll(f);
-    });
-    renderPdf(f, f.result.pdf ? "pdf" : "xmlpdf");
+    syncDualToolbar();
+    applyDualLeft(f);
+    if (!f.rendered.data && !f.rendered.pointage) {
+      loadPointage(f).then(() => {
+        if (state.selected !== f.id || state.tab !== "dual") return;
+        renderData(f); restoreDocumentScroll(f);
+      });
+    }
   } else if (name === "pdf" || name === "xmlpdf") {
     if (force || state.pdfSource !== name) renderPdf(f, name);
-  } else if (name === "data") {
+  } else if (name === "data" || name === "pointage") {
     requestAnimationFrame(() => syncStickyOffsets());
-    if (!f.rendered.data) {
+    if (!f.rendered[name]) {
       loadPointage(f).then(() => {
         const cur = getFile(f.id);
-        if (cur && state.selected === f.id && state.tab === "data") {
+        if (cur && state.selected === f.id && state.tab === name) {
           renderData(cur);
-          cur.rendered.data = true;
           restoreDocumentScroll(cur);
         }
       });
@@ -854,9 +860,32 @@ function setTab(name, force) {
   if (f) {
     f.view = { ...f.view, tab: name };
     saveWorkspace();
-    if (name === "xml" || name === "raw" || (name === "data" && f.rendered.data) ||
+    if (name === "xml" || name === "raw" || ((name === "data" || name === "pointage") && f.rendered[name]) ||
       ((name === "pdf" || name === "xmlpdf") && state.pdfDoc && f.rendered.pdf)) restoreDocumentScroll(f);
   }
+}
+
+function applyDualLeft(f) {
+  const leftSrc = settings.dualLeft === "xmlpdf" ? "xmlpdf" : (f.result.pdf ? "pdf" : "xmlpdf");
+  renderPdf(f, leftSrc);
+}
+
+function applyDualRight(f) {
+  if (f && !f.rendered[settings.dualRight]) {
+    loadPointage(f).then(() => {
+      const cur = getFile(f.id);
+      if (cur && state.selected === f.id && state.tab === "dual") renderData(cur);
+    });
+  }
+  const dualRightId = settings.dualRight === "pointage" ? "tab-pointage" : "tab-data";
+  document.querySelectorAll(".tabpane").forEach((p) =>
+    p.classList.toggle("active", p.id === "tab-pdf" || p.id === dualRightId));
+}
+
+function syncDualToolbar() {
+  const left = byId("dual-left"), right = byId("dual-right");
+  if (left) left.value = settings.dualLeft;
+  if (right) right.value = settings.dualRight;
 }
 
 /* ---------------- onglet PDF ---------------- */
@@ -1065,7 +1094,7 @@ function gotoPage(dir) {
   pages[next].scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* ---------------- onglet Données ---------------- */
+/* ---------------- onglet Pointage de ligne ---------------- */
 
 function makeCell(td, c) {
   if (!c) return;
@@ -1898,10 +1927,15 @@ function schematronTail(sec, sch, unevaluated) {
   }
 }
 
-function renderData(f) {
+function renderAnalyse(f) {
   const pane = byId("tab-data");
   pane.innerHTML = "";
   const r = f.result;
+
+  if (!r.synthese && !r.lines?.length && !(r.sections || []).some((s) => s.rows?.length)) {
+    pane.innerHTML = '<div class="notice">Aucune donnée structurée reconnue — consultez les onglets « XML complet » et « XML brut ».</div>';
+    return;
+  }
 
   if (r.warnings && r.warnings.length) {
     const w = document.createElement("div");
@@ -1913,6 +1947,37 @@ function renderData(f) {
       w.appendChild(d);
     }
     pane.appendChild(w);
+  }
+
+  const taxProofs = r.synthese?.provenance_tva_taux || [];
+  if (taxProofs.length) {
+    const section = Object.assign(document.createElement("section"), { id: "tax-breakdown", className: "section" });
+    section.appendChild(Object.assign(document.createElement("h3"), { textContent: "Ventilation de TVA" }));
+    for (const [index, proof] of taxProofs.entries()) section.appendChild(taxBreakdownPanel(proof, index));
+    pane.appendChild(section);
+  }
+
+  if (r.synthese) pane.appendChild(verdictStrip(f));
+  pane.appendChild(anomalyCenter(f));
+  const controls = controlsSection(f);
+  if (controls) pane.appendChild(controls);
+  const rules = rulesSection(f);
+  if (rules) pane.appendChild(rules);
+  const sch = schematronSection(f);
+  if (sch) pane.appendChild(sch);
+  const xsd = xsdSection(f);
+  if (xsd) pane.appendChild(xsd);
+}
+
+function renderPointage(f) {
+  const pane = byId("tab-pointage");
+  pane.innerHTML = "";
+  const r = f.result;
+
+  if (!r.summary?.length && !r.lines?.length && !(r.sections || []).some((s) => s.rows?.length)) {
+    pane.innerHTML = '<div class="notice">Aucune ligne de facture reconnue — consultez les onglets « XML complet » et « XML brut ».</div>';
+    pane.appendChild(reviewPanel(f));
+    return;
   }
 
   if (r.summary && r.summary.length) {
@@ -1959,25 +2024,6 @@ function renderData(f) {
     }
     pane.appendChild(cards);
   }
-
-  const taxProofs = r.synthese?.provenance_tva_taux || [];
-  if (taxProofs.length) {
-    const section = Object.assign(document.createElement("section"), { id: "tax-breakdown", className: "section" });
-    section.appendChild(Object.assign(document.createElement("h3"), { textContent: "Ventilation de TVA" }));
-    for (const [index, proof] of taxProofs.entries()) section.appendChild(taxBreakdownPanel(proof, index));
-    pane.appendChild(section);
-  }
-
-  if (r.synthese) pane.appendChild(verdictStrip(f));
-  pane.appendChild(anomalyCenter(f));
-  const controls = controlsSection(f);
-  if (controls) pane.appendChild(controls);
-  const rules = rulesSection(f);
-  if (rules) pane.appendChild(rules);
-  const sch = schematronSection(f);
-  if (sch) pane.appendChild(sch);
-  const xsd = xsdSection(f);
-  if (xsd) pane.appendChild(xsd);
   pane.appendChild(reviewPanel(f));
 
   if (r.lines && r.lines.length) {
@@ -2086,10 +2132,13 @@ function renderData(f) {
     pane.appendChild(sec);
   }
 
-  if (!r.synthese && !r.lines?.length && !(r.sections || []).some((s) => s.rows?.length)) {
-    pane.innerHTML = '<div class="notice">Aucune donnée structurée reconnue — consultez les onglets « XML complet » et « XML brut ».</div>';
-    pane.appendChild(reviewPanel(f));
-  }
+}
+
+function renderData(f) {
+  renderAnalyse(f);
+  renderPointage(f);
+  f.rendered.data = true;
+  f.rendered.pointage = true;
 }
 
 /* ---------------- onglet XML complet ---------------- */
@@ -2349,7 +2398,7 @@ function wireDnD() {
 
 const SETTINGS_KEY = "fx-settings";
 const THEME_KEY = "fx-theme";   // lu par index.html avant le premier rendu
-const SETTING_DEFAULTS = { theme: "jour", density: "normal", defaultTab: "pdf", pdfZoom: "1.25", startup: "restore", library: "on" };
+const SETTING_DEFAULTS = { theme: "jour", density: "normal", defaultTab: "pdf", pdfZoom: "1.25", startup: "restore", library: "on", dualLeft: "pdf", dualRight: "data" };
 const SETTING_CHOICES = {
   theme: ["jour", "nuit", "auto", "girl"],
   density: ["normal", "compact"],
@@ -2357,6 +2406,8 @@ const SETTING_CHOICES = {
   startup: ["restore", "home"],
   library: ["on", "off"],
   pdfZoom: ["fit", "0.75", "1", "1.25", "1.5", "2"],
+  dualLeft: ["pdf", "xmlpdf"],
+  dualRight: ["data", "pointage"],
 };
 const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
 const settings = loadSettings();
@@ -2502,6 +2553,16 @@ function wireUI() {
     state.fit = false;
     captureDocumentView(); saveWorkspace();
     if (state.pdfDoc) renderAllPages(state.pdfDoc);
+  });
+  byId("dual-left").addEventListener("change", (e) => {
+    setSetting("dualLeft", e.target.value);
+    const f = getFile(state.selected);
+    if (f && state.tab === "dual") applyDualLeft(f);
+  });
+  byId("dual-right").addEventListener("change", (e) => {
+    setSetting("dualRight", e.target.value);
+    const f = getFile(state.selected);
+    if (f && state.tab === "dual") applyDualRight(f);
   });
   const mainEl = document.querySelector(".main");
   if (mainEl) {

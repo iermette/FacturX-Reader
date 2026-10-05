@@ -97,8 +97,8 @@ async function main() {
     await page.evaluate(async fixture => { await addPaths({ files: [fixture] }); }, fixture);
     await expect(page.locator('.pdf-page')).toHaveCount(2);
     await expect(page.locator('#fv-badges')).toContainText('2026-10-02');
-    await page.getByRole('button', { name: 'Données', exact: true }).click();
-    await expect(page.locator('#tab-data')).toContainText("Date d'émission");
+    await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
+    await expect(page.locator('#tab-pointage')).toContainText("Date d'émission");
     await page.getByRole('button', { name: 'PDF', exact: true }).click();
     await page.locator('#pdf-zoom').selectOption('1.5');
     await page.waitForFunction(() => !workspaceScrollTarget && state.zoom === 1.5 && getFile(state.selected)?.rendered.pdf);
@@ -124,7 +124,7 @@ async function main() {
     await expect(page.locator('#batch-table tfoot tr')).toContainText('100,00');
     await expect(page.locator('#batch-table tfoot tr')).toContainText('120,00');
     await page.locator('#batch-table tbody tr.batch-row td').first().click();
-    await page.getByRole('button', { name: 'PDF et données', exact: true }).click();
+    await page.getByRole('button', { name: 'Côte à côte', exact: true }).click();
     await expect(page.locator('#reading-panes')).toHaveClass('dual-reading');
     await expect(page.locator('#controls tr').filter({ hasText: 'Total TTC = total HT + total TVA' })).toContainText('Conforme');
     await expect(page.locator('#verdicts .ctl-chip').first()).toHaveText('Lecture réussie');
@@ -170,9 +170,10 @@ async function main() {
       catch (error) { return String(error).includes('décompression'); }
     }, bomb);
     if (!bounded) throw new Error('Le plafond PDF natif n’a pas rejeté le flux.');
-    await page.locator('#tab-data .review-panel summary span').click();
+    await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
+    await page.locator('#tab-pointage .review-panel summary span').click();
     await page.getByLabel('Commentaire de la facture', { exact: true }).fill('Test natif P2');
-    await page.locator('#tab-data').getByLabel('Vérification de synthetic.pdf').selectOption('Vérifiée');
+    await page.locator('#tab-pointage').getByLabel('Vérification de synthetic.pdf').selectOption('Vérifiée');
     await page.locator('#file-input').setInputFiles({ name: 'deposited.pdf', mimeType: 'application/pdf', buffer: invoicePdf() });
     await expect(page.locator('#fv-name')).toHaveText('deposited.pdf');
     await stop(page);
@@ -182,9 +183,9 @@ async function main() {
     await expect(page.locator('#fv-name')).toHaveText('deposited.pdf');
     await expect(page.locator('.pdf-page')).toHaveCount(2);
     await expect(page.locator('#workspace-message')).toContainText('1 document');
-    await page.getByRole('button', { name: 'PDF et données', exact: true }).click();
+    await page.getByRole('button', { name: 'Côte à côte', exact: true }).click();
     await expect(page.getByLabel('Commentaire de la facture', { exact: true })).toHaveValue('Test natif P2');
-    await expect(page.locator('#tab-data').getByLabel('Vérification de deposited.pdf')).toHaveValue('Vérifiée');
+    await expect(page.locator('#tab-pointage').getByLabel('Vérification de deposited.pdf')).toHaveValue('Vérifiée');
     // Bibliothèque : la facture analysée par le moteur y figure, une seule fois (même XML déposé deux fois).
     await page.locator('#tab-library').click();
     await expect(page.locator('#library-table tbody tr')).toHaveCount(1);
@@ -216,8 +217,8 @@ async function main() {
     page = await launch();
     await expect(page.locator('#workspace-message')).toContainText('pointages.json est illisible');
     await expect(page.locator('#workspace-message')).toContainText('suivi.json est illisible');
-    await page.getByRole('button', { name: 'PDF et données', exact: true }).click();
-    await page.locator('#tab-data').getByLabel('Vérification de deposited.pdf').selectOption('Anomalie');
+    await page.getByRole('button', { name: 'Pointage de ligne', exact: true }).click();
+    await page.locator('#tab-pointage').getByLabel('Vérification de deposited.pdf').selectOption('Anomalie');
     await expect(page.locator('#workspace-message')).toContainText('Rien ne sera écrasé');
     await expect(page.locator('#workspace-message')).toContainText('suivi.json est illisible');
     if (fs.readFileSync(pointagesFile, 'utf8') !== broken || fs.readFileSync(suiviFile, 'utf8') !== 'pas du json')
@@ -229,7 +230,7 @@ async function main() {
     await expect(page.locator('#data-status-text')).toContainText('Pointages : 1 facture');
     await expect(page.locator('#data-status-text .data-status-error')).toHaveCount(0);
     await page.locator('#settings-close').click();
-    await expect(page.locator('#tab-data').getByLabel('Vérification de deposited.pdf')).toHaveValue('Vérifiée');
+    await expect(page.locator('#tab-pointage').getByLabel('Vérification de deposited.pdf')).toHaveValue('Vérifiée');
     if (JSON.parse(fs.readFileSync(pointagesFile, 'utf8')).abc.lines.length !== 2) throw new Error('Pointages non restaurés.');
     if (!fs.readdirSync(dataDir).some(name => name.startsWith('pointages.illisible-'))) throw new Error('Fichier illisible non conservé.');
     if (errors.length) throw new Error(errors.join('\n'));

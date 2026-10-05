@@ -206,8 +206,8 @@ function anomalyCenter(f) {
       if (issue.family === "calcul" && proofKey && f.result.synthese?.provenance?.[proofKey]) {
         const provenance = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-sm", textContent: "Voir la provenance des montants" });
         provenance.addEventListener("click", () => {
-          setTab("data");
-          const card = byId("tab-data").querySelector('[data-provenance="' + proofKey + '"]');
+          setTab("pointage");
+          const card = byId("tab-pointage").querySelector('[data-provenance="' + proofKey + '"]');
           if (card) { card.querySelector(".provenance-details").open = true; card.scrollIntoView({ behavior: "smooth", block: "center" }); }
         });
         actions.appendChild(provenance);

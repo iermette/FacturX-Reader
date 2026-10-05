@@ -113,8 +113,9 @@ async function clearWorkspaceHistory() {
 function captureDocumentView() {
   const f = getFile(state.selected);
   if (!f || workspaceRestoring || workspaceScrollTarget || byId("file-view").hidden) return;
+  const dualRightId = settings.dualRight === "pointage" ? "tab-pointage" : "tab-data";
   f.view = { ...f.view, tab: state.tab, zoom: state.zoom, fit: state.fit,
-    dualScroll: state.tab === "dual" ? { pdf: byId("tab-pdf").scrollTop, data: byId("tab-data").scrollTop } : f.view?.dualScroll,
+    dualScroll: state.tab === "dual" ? { pdf: byId("tab-pdf").scrollTop, right: byId(dualRightId).scrollTop } : f.view?.dualScroll,
     scroll: { ...f.view?.scroll, [state.tab]: document.querySelector(".main").scrollTop },
     linesQuery: f.linesQuery, sort: f.sort };
 }
@@ -125,7 +126,8 @@ function restoreDocumentScroll(f) {
     if (state.selected === f.id && state.tab === tab) {
       if (tab === "dual") {
         byId("tab-pdf").scrollTop = f.view?.dualScroll?.pdf || 0;
-        byId("tab-data").scrollTop = f.view?.dualScroll?.data || 0;
+        const dualRightId = settings.dualRight === "pointage" ? "tab-pointage" : "tab-data";
+        byId(dualRightId).scrollTop = (f.view?.dualScroll?.right ?? f.view?.dualScroll?.data) || 0;
       }
       document.querySelector(".main").scrollTop = f.view?.scroll?.[tab] || 0;
       workspaceScrollTarget = null;

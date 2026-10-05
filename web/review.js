@@ -69,7 +69,7 @@ function reviewSelect(f) {
   };
   return select;
 }
-/* Panneau « Suivi de vérification » de l'onglet Données. */
+/* Panneau « Suivi de vérification » de l'onglet Pointage de ligne. */
 function reviewPanel(f) {
   const panel = document.createElement("details"); panel.className = "section review-panel";
   const review = readReview(f);
@@ -145,10 +145,10 @@ async function exportControlReport(f, btn) {
   setTimeout(() => { btn.textContent = old; }, 1200);
 }
 
-/* Vue « PDF et données » : chaque volet garde son propre défilement. */
+/* Vue « Côte à côte » : chaque volet garde son propre défilement. */
 function wireReview() {
   window.addEventListener("pagehide", flushReviews);
-  for (const id of ["tab-pdf", "tab-data"]) byId(id).addEventListener("scroll", () => {
+  for (const id of ["tab-pdf", "tab-data", "tab-pointage"]) byId(id).addEventListener("scroll", () => {
     if (state.tab !== "dual") return;
     clearTimeout(workspaceSaveTimer);
     workspaceSaveTimer = setTimeout(() => { captureDocumentView(); saveWorkspace(); }, 250);

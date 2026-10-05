@@ -140,7 +140,7 @@ function actionSummary(v) {
   return panel;
 }
 
-/* Bandeau de verdicts en tête de l'onglet Données. */
+/* Bandeau de verdicts en tête de l'onglet Analyse. */
 function verdictStrip(f) {
   const v = invoiceVerdicts(f, duplicateChecks(f).length);
   const strip = document.createElement("div");

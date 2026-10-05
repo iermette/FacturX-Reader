@@ -4,9 +4,9 @@ Chantier du 4 octobre 2026, PR #3 fusionnée dans `main` (`e35e7cc`), CI complè
 
 ## Utilisation
 
-- **Données → Exporter Excel** : lignes visibles, dans l’ordre du tri, après recherche et filtre de pointage. Colonnes affichées, pointage et devise séparée.
+- **Pointage de ligne → Exporter Excel** : lignes visibles, dans l’ordre du tri, après recherche et filtre de pointage. Colonnes affichées, pointage et devise séparée.
 - **Tableau des factures → Exporter Excel** : factures visibles après tous les filtres, dans l’ordre du tri. Deux feuilles : **Factures** et **Totaux par devise**. Les avoirs sont déduits des totaux ; les montants des factures gardent leur valeur d’origine.
-- **Données → Contrôles → Rapport PDF** : synthèse, verdicts et périmètre, contrôles de cohérence, règles natives EN 16931, XSD, Schematron et règles françaises, conteneur PDF, statut manuel et commentaires de facture et de lignes.
+- **Analyse → Contrôles → Rapport PDF** : synthèse, verdicts et périmètre, contrôles de cohérence, règles natives EN 16931, XSD, Schematron et règles françaises, conteneur PDF, statut manuel et commentaires de facture et de lignes.
 - Les trois actions sont également disponibles dans **Fichier**. CSV et rapport JSON restent disponibles.
 
 Un export reflète les données au moment du clic. Une validation encore en cours n’est pas attendue : le rapport indique l’état disponible. Réexporter lorsque la validation est terminée. Le suivi est manuel et ne confirme pas le paiement.
